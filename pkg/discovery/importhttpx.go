@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"context"
 	"encoding/json"
+	"io"
 	"os"
 	"time"
 
@@ -32,32 +33,21 @@ type httpxLine struct {
 	Webserver  string   `json:"webserver"`
 }
 
-func (h HTTPXImport) Collect(ctx context.Context, _ Job) ([]contracts.ComponentObservation, contracts.CollectorRun, error) {
-	run := contracts.CollectorRun{Name: h.Name(), Ran: false}
-	f, err := os.Open(h.Path)
-	if err != nil {
-		run.Unavailable = "cannot open httpx file: " + err.Error()
-		return nil, run, err
-	}
-	defer f.Close()
-
-	now := time.Now().UTC()
+// parseHTTPXJSONL parses httpx JSONL from r into endpoint + technology
+// observations. Malformed lines are skipped (a parse skip is not a finding).
+// Shared by the file importer and the live-tool collector.
+func parseHTTPXJSONL(r io.Reader, observedBy string, now time.Time) []contracts.ComponentObservation {
 	var out []contracts.ComponentObservation
-	sc := bufio.NewScanner(f)
+	sc := bufio.NewScanner(r)
 	sc.Buffer(make([]byte, 0, 1024*1024), 8*1024*1024)
-	line := 0
 	for sc.Scan() {
-		if err := ctx.Err(); err != nil {
-			return out, run, err
-		}
-		line++
 		b := sc.Bytes()
 		if len(b) == 0 {
 			continue
 		}
 		var hl httpxLine
 		if err := json.Unmarshal(b, &hl); err != nil {
-			continue // skip malformed lines; a parse skip is not a finding
+			continue
 		}
 		url := hl.URL
 		if url == "" {
@@ -77,30 +67,32 @@ func (h HTTPXImport) Collect(ctx context.Context, _ Job) ([]contracts.ComponentO
 			attrs["webserver"] = hl.Webserver
 		}
 		out = append(out, contracts.ComponentObservation{
-			Ref:        "httpx:" + url,
-			Kind:       "endpoint",
-			Value:      url,
-			Attributes: attrs,
-			ObservedBy: h.Name(),
-			ObservedAt: now,
-			Trust:      contracts.TrustObserved,
+			Ref: "httpx:" + url, Kind: "endpoint", Value: url,
+			Attributes: attrs, ObservedBy: observedBy, ObservedAt: now, Trust: contracts.TrustObserved,
 		})
 		for _, t := range hl.Tech {
 			out = append(out, contracts.ComponentObservation{
-				Ref:        "tech:" + url + ":" + t,
-				Kind:       "technology",
-				Value:      t,
+				Ref: "tech:" + url + ":" + t, Kind: "technology", Value: t,
 				Attributes: map[string]string{"on": url},
-				ObservedBy: h.Name(),
-				ObservedAt: now,
-				Trust:      contracts.TrustObserved,
+				ObservedBy: observedBy, ObservedAt: now, Trust: contracts.TrustObserved,
 			})
 		}
 	}
-	if err := sc.Err(); err != nil {
-		run.Unavailable = "read error: " + err.Error()
-		return out, run, err
+	return out
+}
+
+func (h HTTPXImport) Collect(ctx context.Context, _ Job) ([]contracts.ComponentObservation, contracts.CollectorRun, error) {
+	run := contracts.CollectorRun{Name: h.Name()}
+	f, err := os.Open(h.Path)
+	if err != nil {
+		run.Unavailable = "cannot open httpx file: " + err.Error()
+		return nil, run, err
 	}
+	defer f.Close()
+	if err := ctx.Err(); err != nil {
+		return nil, run, err
+	}
+	out := parseHTTPXJSONL(f, h.Name(), time.Now().UTC())
 	run.Ran = true
 	return out, run, nil
 }
