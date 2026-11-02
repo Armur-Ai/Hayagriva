@@ -13,7 +13,7 @@
 
 ## Phase 1 — Passive & active discovery
 - ☐ Scope resolution: domains/CIDRs → hosts/services.
-- ☐ HTTP surface probing (headers, fingerprints, tech detection), rate-limited.
+- ◐ HTTP surface probing via the live httpx collector (ReviewedToolRunner); rate-limiting via RequestGate pending.
 - ☐ Route/endpoint enumeration (crawl) with bounded depth and politeness controls.
 - ☐ Parameter/form extraction.
 
@@ -23,13 +23,13 @@
 - ☐ Object-reference detection (IDs in paths/bodies) for downstream BOLA/IDOR reasoning.
 
 ## Phase 3 — Tool parsing & normalization
-- ☐ Parsers for nmap XML, httpx/nuclei/katana JSONL → the evidence model.
-- ☐ Import adapter: merge external recon output with provenance preserved.
+- ☑ Parsers for httpx JSONL, nmap XML, and URL-list (katana/gau) → the evidence model (pkg/discovery import collectors).
+- ☑ Import adapter: external recon output merges onto the evidence model with provenance (ObservedBy/ObservedAt/Trust).
 - ☐ De-duplication keyed on stable fingerprints.
 
 ## Phase 4 — Library & adapters
 - ☐ Stable `pkg/discovery` API (semver).
-- ☐ In-process Go adapter + optional authenticated HTTP transport (same semantics, conformance fixtures).
+- ◐ In-process Go consumed directly; the shared Adapter/transport lives in armur-contracts (conformance suite pending).
 - ☐ Emit **discovery evidence** in the shared contract Akira consumes.
 
 ## Phase 5 — Hardening & docs
