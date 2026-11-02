@@ -14,8 +14,8 @@ import (
 	"fmt"
 	"os"
 
-	contracts "github.com/Armur-Ai/armur-contracts"
 	"github.com/Armur-Ai/Hayagriva/pkg/discovery"
+	contracts "github.com/Armur-Ai/armur-contracts"
 )
 
 func main() {
