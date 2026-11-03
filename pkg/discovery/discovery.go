@@ -101,6 +101,10 @@ func (d *Discoverer) Run(ctx context.Context, job Job) (contracts.DiscoveryBundl
 		b.Components = append(b.Components, obs...)
 	}
 	b.Components = dedupObservations(b.Components)
+	if kept, dropped := enforceScope(b.Components, job.Scope); dropped > 0 {
+		b.Components = kept
+		b.Limits = append(b.Limits, fmt.Sprintf("dropped %d observation(s) outside the authorized scope", dropped))
+	}
 	if len(d.Collectors) == 0 {
 		b.Limits = append(b.Limits, "no collectors registered — this is a coverage gap, not a clean scan (P1 ports recon collectors here)")
 	}

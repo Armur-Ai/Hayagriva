@@ -7,7 +7,7 @@
 ## Phase 0 — Foundations
 - ☐ Go module `github.com/Armur-Ai/Hayagriva`; `pkg/` (engine) + `cmd/hayagriva` (CLI) split, CLI consumes `pkg/` only.
 - ☐ Typed **evidence model** (hosts, services, endpoints, params, auth surfaces, object refs) with provenance fields (source, timestamp, method).
-- ☐ Explicit **scope** type + enforcement (deny traffic outside scope); dry-run mode.
+- ◐ Scope enforcement: observations outside Job.Scope are dropped with a note (deny-traffic + dry-run pending).
 - ☐ JSON output schema (versioned) + golden-file tests.
 - ☐ LICENSE, CONTRIBUTING, CI (build + `go test ./...`).
 
