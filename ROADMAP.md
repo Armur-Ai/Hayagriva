@@ -25,7 +25,7 @@
 ## Phase 3 — Tool parsing & normalization
 - ☑ Parsers for httpx JSONL, nmap XML, and URL-list (katana/gau) → the evidence model (pkg/discovery import collectors).
 - ☑ Import adapter: external recon output merges onto the evidence model with provenance (ObservedBy/ObservedAt/Trust).
-- ☐ De-duplication keyed on stable fingerprints.
+- ☑ Cross-collector de-duplication (by Ref, else Kind|Value) in Discoverer.Run.
 
 ## Phase 4 — Library & adapters
 - ☐ Stable `pkg/discovery` API (semver).

@@ -48,6 +48,26 @@ func New(collectors ...Collector) *Discoverer {
 	return &Discoverer{Collectors: collectors}
 }
 
+// dedupObservations removes duplicate observations that different collectors
+// may report for the same surface element, keeping the first (its provenance).
+// The key is the Ref when set, else Kind|Value.
+func dedupObservations(in []contracts.ComponentObservation) []contracts.ComponentObservation {
+	seen := make(map[string]struct{}, len(in))
+	out := in[:0]
+	for _, o := range in {
+		key := o.Ref
+		if key == "" {
+			key = string(o.Kind) + "|" + o.Value
+		}
+		if _, dup := seen[key]; dup {
+			continue
+		}
+		seen[key] = struct{}{}
+		out = append(out, o)
+	}
+	return out
+}
+
 func (d *Discoverer) now(job Job) time.Time {
 	if job.Clock != nil {
 		return job.Clock.Now()
@@ -80,6 +100,7 @@ func (d *Discoverer) Run(ctx context.Context, job Job) (contracts.DiscoveryBundl
 		b.Collectors = append(b.Collectors, run)
 		b.Components = append(b.Components, obs...)
 	}
+	b.Components = dedupObservations(b.Components)
 	if len(d.Collectors) == 0 {
 		b.Limits = append(b.Limits, "no collectors registered — this is a coverage gap, not a clean scan (P1 ports recon collectors here)")
 	}
