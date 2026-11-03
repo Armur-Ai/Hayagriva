@@ -1,6 +1,7 @@
 package discovery
 
 import (
+	"net"
 	"net/url"
 	"strings"
 
@@ -64,15 +65,26 @@ func hostOf(value string) string {
 	return strings.ToLower(v)
 }
 
-// inScope reports whether host is an exact match or a subdomain of any scope
-// entry (or an exact IP match).
+// inScope reports whether host is in scope. A scope entry may be a domain
+// (exact host or subdomain match), an exact IP, or a CIDR (host IP contained in
+// the network).
 func inScope(host string, scope []string) bool {
 	if host == "" {
 		return false
 	}
+	hostIP := net.ParseIP(host)
 	for _, s := range scope {
 		s = strings.ToLower(strings.TrimSpace(s))
 		if s == "" {
+			continue
+		}
+		// CIDR entry: match by IP containment.
+		if strings.Contains(s, "/") {
+			if hostIP != nil {
+				if _, nw, err := net.ParseCIDR(s); err == nil && nw.Contains(hostIP) {
+					return true
+				}
+			}
 			continue
 		}
 		if host == s || strings.HasSuffix(host, "."+s) {

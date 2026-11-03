@@ -69,3 +69,21 @@ func TestRunEnforcesScope(t *testing.T) {
 		t.Fatalf("expected a dropped-out-of-scope limit note, got %v", b.Limits)
 	}
 }
+
+func TestInScopeCIDR(t *testing.T) {
+	scope := []string{"10.0.0.0/24", "example.test"}
+	if !inScope("10.0.0.5", scope) {
+		t.Fatal("IP within CIDR should be in scope")
+	}
+	if inScope("10.0.1.5", scope) {
+		t.Fatal("IP outside CIDR should be rejected")
+	}
+	// domain entries still work alongside CIDR
+	if !inScope("api.example.test", scope) {
+		t.Fatal("subdomain should still match with a CIDR entry present")
+	}
+	// a hostname is not matched by a CIDR entry
+	if inScope("evil.com", []string{"10.0.0.0/24"}) {
+		t.Fatal("hostname must not match a CIDR entry")
+	}
+}
