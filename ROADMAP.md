@@ -18,7 +18,7 @@
 - ☐ Parameter/form extraction.
 
 ## Phase 2 — API discovery
-- ☐ OpenAPI/Swagger ingestion and endpoint expansion.
+- ☑ OpenAPI v3 / Swagger v2 ingestion and endpoint expansion (pkg/discovery OpenAPIImport).
 - ☐ GraphQL introspection → typed endpoint/field inventory.
 - ☐ Object-reference detection (IDs in paths/bodies) for downstream BOLA/IDOR reasoning.
 
