@@ -78,6 +78,36 @@ hayagriva discover https://target.example --scope target.example --out recon.jso
 #   import "github.com/Armur-Ai/Hayagriva/pkg/discovery"
 ```
 
+### Import existing recon (offline, no network)
+
+Hayagriva turns the output of the recon tools you already run into one
+provenance-preserving `DiscoveryBundle` — the swarm consumes it to warm-start
+and skip rediscovery. Each importer is pure parsing; a missing file is reported
+as an explicit gap, never a silent clean scan. Scanner *vulnerability verdicts*
+are deliberately not imported — Hayagriva observes surface; adjudication is the
+swarm's job.
+
+```bash
+hayagriva discover --scope target.example \
+  --urls urls.txt \                 # a URL/endpoint list (katana/gau/… )
+  --import-httpx httpx.jsonl \       # httpx -json/-jsonl  → endpoints + tech
+  --import-nmap scan.xml \           # nmap -oX            → hosts + services
+  --import-openapi openapi.json \    # OpenAPI/Swagger     → operations
+  --import-katana katana.jsonl \     # katana -jsonl crawl → endpoints + tech
+  --import-nuclei nuclei.jsonl \     # nuclei -jsonl       → endpoints (surface only)
+  --import-subfinder subs.txt        # subfinder -oJ/list  → hosts (subdomains)
+```
+
+| Flag | Source tool | Emits |
+|---|---|---|
+| `--urls` | katana / gau URL list | endpoints |
+| `--import-httpx` | httpx `-json`/`-jsonl` | endpoints + technologies |
+| `--import-nmap` | nmap `-oX` | hosts + services |
+| `--import-openapi` | OpenAPI / Swagger spec | API operations |
+| `--import-katana` | katana `-jsonl` | endpoints + technologies |
+| `--import-nuclei` | nuclei `-jsonl` | endpoints (surface only; no verdicts) |
+| `--import-subfinder` | subfinder `-oJ` / host list | hosts (subdomains) |
+
 ## Status & roadmap
 
 This is a fresh scaffold. See [ROADMAP.md](./ROADMAP.md) for the phased plan.
