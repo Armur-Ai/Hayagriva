@@ -35,20 +35,45 @@ func main() {
 }
 
 func usage() {
-	fmt.Fprintln(os.Stderr, "usage: hayagriva discover --scope <host[,host...]> [target]")
+	fmt.Fprintln(os.Stderr, "usage: hayagriva discover --scope <host[,host...]> [--urls f] [--import-httpx f] [--import-nmap f] [--import-openapi f]")
+	fmt.Fprintln(os.Stderr, "       (with no import flags, discover emits an honest empty bundle whose Limits record the coverage gap)")
 	fmt.Fprintln(os.Stderr, "       hayagriva version")
 }
 
 func runDiscover(args []string) {
 	fs := flag.NewFlagSet("discover", flag.ExitOnError)
 	scope := fs.String("scope", "", "comma-separated authorized scope (required)")
+	urls := fs.String("urls", "", "path to a URL/endpoint list (one per line; e.g. katana/gau output)")
+	urlsSource := fs.String("urls-source", "urllist", "provenance label for --urls (e.g. katana, gau)")
+	importHTTPX := fs.String("import-httpx", "", "path to an httpx -json/-jsonl output file")
+	importNmap := fs.String("import-nmap", "", "path to an nmap -oX XML file")
+	importOpenAPI := fs.String("import-openapi", "", "path to an openapi.json / swagger.json file")
 	_ = fs.Parse(args)
 	if *scope == "" {
 		fmt.Fprintln(os.Stderr, "error: --scope is required")
 		os.Exit(2)
 	}
 
-	d := discovery.New() // P1 registers real collectors here
+	// Register the import collectors the operator pointed at. These turn existing
+	// recon artifacts (katana/gau URL lists, httpx JSON, nmap XML, OpenAPI specs)
+	// into a provenance-preserving DiscoveryBundle — offline, no network. Live
+	// collectors (httpx/katana) register here too once a ReviewedToolRunner host
+	// supplies the tool boundary.
+	var collectors []discovery.Collector
+	if *urls != "" {
+		collectors = append(collectors, discovery.URLListImport{Path: *urls, Source: *urlsSource})
+	}
+	if *importHTTPX != "" {
+		collectors = append(collectors, discovery.HTTPXImport{Path: *importHTTPX})
+	}
+	if *importNmap != "" {
+		collectors = append(collectors, discovery.NmapImport{Path: *importNmap})
+	}
+	if *importOpenAPI != "" {
+		collectors = append(collectors, discovery.OpenAPIImport{Path: *importOpenAPI})
+	}
+
+	d := discovery.New(collectors...)
 	bundle, err := d.Run(context.Background(), discovery.Job{Scope: splitComma(*scope)})
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "discovery error: %v\n", err)
