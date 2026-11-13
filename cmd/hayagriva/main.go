@@ -35,7 +35,7 @@ func main() {
 }
 
 func usage() {
-	fmt.Fprintln(os.Stderr, "usage: hayagriva discover --scope <host[,host...]> [--urls f] [--import-httpx f] [--import-nmap f] [--import-openapi f] [--import-katana f]")
+	fmt.Fprintln(os.Stderr, "usage: hayagriva discover --scope <host[,host...]> [--urls f] [--import-httpx f] [--import-nmap f] [--import-openapi f] [--import-katana f] [--import-nuclei f]")
 	fmt.Fprintln(os.Stderr, "       (with no import flags, discover emits an honest empty bundle whose Limits record the coverage gap)")
 	fmt.Fprintln(os.Stderr, "       hayagriva version")
 }
@@ -49,6 +49,7 @@ func runDiscover(args []string) {
 	importNmap := fs.String("import-nmap", "", "path to an nmap -oX XML file")
 	importOpenAPI := fs.String("import-openapi", "", "path to an openapi.json / swagger.json file")
 	importKatana := fs.String("import-katana", "", "path to a katana -jsonl crawl output file")
+	importNuclei := fs.String("import-nuclei", "", "path to a nuclei -jsonl output file (endpoints only; vuln verdicts are not imported)")
 	_ = fs.Parse(args)
 	if *scope == "" {
 		fmt.Fprintln(os.Stderr, "error: --scope is required")
@@ -75,6 +76,9 @@ func runDiscover(args []string) {
 	}
 	if *importKatana != "" {
 		collectors = append(collectors, discovery.KatanaImport{Path: *importKatana})
+	}
+	if *importNuclei != "" {
+		collectors = append(collectors, discovery.NucleiImport{Path: *importNuclei})
 	}
 
 	d := discovery.New(collectors...)
